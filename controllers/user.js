@@ -144,6 +144,11 @@ class UserController {
     const { userId, projectId = "" } = param
     // 查询个人信息
     const res = await UserModel.getUserInfo(userId)
+    if (!(res && res[0])) {
+      ctx.response.status = 200;
+      ctx.body = statusCode.SUCCESS_200('查询信息列表成功！', {})
+      return
+    }
     const { companyId } = res[0]
     // 查询是不是团长
     let leaderId = ""
@@ -283,10 +288,10 @@ class UserController {
 
   static async refreshValidateCode(ctx) {
     const code = await UserController.setValidateCode()
-    if (global.monitorInfo.loginValidateCodeTimer) {
-      clearInterval(global.monitorInfo.loginValidateCodeTimer)
+    if (global.centerInfo.loginValidateCodeTimer) {
+      clearInterval(global.centerInfo.loginValidateCodeTimer)
     } else {
-      global.monitorInfo.loginValidateCodeTimer = setInterval(() => {
+      global.centerInfo.loginValidateCodeTimer = setInterval(() => {
         UserController.setValidateCode()
       }, 5 * 60 * 1000)
     }
@@ -316,7 +321,7 @@ class UserController {
     const { emailName, password, code, webfunnyToken } = param
 
     const decodePwd = Utils.b64DecodeUnicode(password).split("").reverse().join("")
-    // const loginValidateCode = global.monitorInfo.loginValidateCode.toLowerCase()
+    // const loginValidateCode = global.centerInfo.loginValidateCode.toLowerCase()
     const loginValidateCodeRes = await ConfigModel.getConfigByConfigName("loginValidateCode")
     const loginValidateCode = loginValidateCodeRes[0].configValue.toLowerCase()
     const loginCode = code.toLowerCase()
@@ -460,18 +465,19 @@ class UserController {
       const tempIndex = Math.floor(Math.random() * (charArr.length - 1) + 1)
       code += charArr.charAt(tempIndex)
     }
-    if (global.monitorInfo.registerEmailCode[email]) {
+    if (global.centerInfo.registerEmailCode[email]) {
       ctx.response.status = 200;
       ctx.body = statusCode.SUCCESS_200('验证码发送太频繁', 1)
       return
     }
-    global.monitorInfo.registerEmailCode[email] = code
+    global.centerInfo.registerEmailCode[email] = code
     // 邮箱验证失败次数清零
-    global.monitorInfo.registerEmailCodeCheckError[email] = 0
+    global.centerInfo.registerEmailCodeCheckError[email] = 0
     // 1分钟后失效
     setTimeout(() => {
-      delete global.monitorInfo.registerEmailCode[email]
+      delete global.centerInfo.registerEmailCode[email]
     }, 2 * 60 * 1000)
+    console.log(`【注册验证码】${email}：${code}`)
     const title = "注册验证码：" + code
     const content = "<p>用户你好!</p>" + 
     "<p>Webfunny注册的验证码为：" + code + "</p>" +
@@ -493,7 +499,7 @@ class UserController {
       return
     }
     ctx.response.status = 200;
-    ctx.body = statusCode.SUCCESS_200('success', global.monitorInfo.registerEmailCode)
+    ctx.body = statusCode.SUCCESS_200('success', global.centerInfo.registerEmailCode)
   }
 
   /**
@@ -504,7 +510,7 @@ class UserController {
   static async registerCheck(ctx) {
     const param = JSON.parse(ctx.request.body)
     const { name, email, emailCode, password } = param
-    const registerEmailCode = global.monitorInfo.registerEmailCode[email]
+    const registerEmailCode = global.centerInfo.registerEmailCode[email]
     const emailCodeStr = emailCode.toLowerCase()
     // 判断验证码是否正确或是否失效
     if (!registerEmailCode || emailCodeStr != registerEmailCode.toLowerCase()) {
@@ -559,13 +565,13 @@ class UserController {
     // 记录注册邮箱
     Utils.postJson("http://www.webfunny.cn/config/recordEmail", {phone, email, purchaseCode: accountInfo.purchaseCode, source: "center-register"}).catch((e) => {})
     
-    const registerEmailCodeCheckError = global.monitorInfo.registerEmailCodeCheckError
+    const registerEmailCodeCheckError = global.centerInfo.registerEmailCodeCheckError
     if (registerEmailCodeCheckError[email] >= 3) {
       ctx.response.status = 200;
       ctx.body = statusCode.SUCCESS_200('验证码失败次数达到上限，请重新获取验证码！', 1)
       return
     }
-    const registerEmailCode = global.monitorInfo.registerEmailCode[email]
+    const registerEmailCode = global.centerInfo.registerEmailCode[email]
     const emailCodeStr = emailCode.toLowerCase()
     // 判断验证码是否正确或是否失效
     if (!registerEmailCode || emailCodeStr != registerEmailCode.toLowerCase()) {
@@ -666,13 +672,13 @@ class UserController {
     // 记录注册邮箱
     Utils.postJson(`${WEBFUNNY_CONFIG_URI}/config/recordEmail`, {phone, email, purchaseCode: accountInfo.purchaseCode, source: "center-register"}).catch((e) => {})
     
-    const registerEmailCodeCheckError = global.monitorInfo.registerEmailCodeCheckError
+    const registerEmailCodeCheckError = global.centerInfo.registerEmailCodeCheckError
     if (registerEmailCodeCheckError[email] >= 3) {
       ctx.response.status = 200;
       ctx.body = statusCode.SUCCESS_200('验证码失败次数达到上限，请重新获取验证码！', 1)
       return
     }
-    const registerEmailCode = global.monitorInfo.registerEmailCode[email]
+    const registerEmailCode = global.centerInfo.registerEmailCode[email]
     const emailCodeStr = emailCode.toLowerCase()
     // 判断验证码是否正确或是否失效
     if (!registerEmailCode || emailCodeStr != registerEmailCode.toLowerCase()) {
@@ -768,30 +774,35 @@ class UserController {
    * @returns {Promise.<void>}
    */
   static async registerForApi(ctx) {
-    const { name, email, phone, password, company = "xx团队" } = ctx.request.body
-    const decodePwd = password
+    const param = ctx.request.body
+    const { chooseCompanyId = "1", name, email = "", phone = "", password } = param
+    const decodePwd = password // Utils.b64DecodeUnicode(password).split("").reverse().join("")
     const userId = Utils.getUuid()
+    let companyId = chooseCompanyId
     const avatar = Math.floor(Math.random() * 10)
-    const data = {nickname: name, emailName: email, phone, password: Utils.md5(decodePwd), userId, userType: "customer", registerStatus: 1, avatar}
+    // 注册用户是否需要激活
+    let registerStatus = accountInfo.activationRequired === true ? 0 : 1
+    let userType = "customer"
+    const data = {companyId, nickname: name, emailName: email, phone, password: Utils.md5(decodePwd), userId, userType, registerStatus, avatar}
+
+    // 记录注册邮箱
+    Utils.postJson(`${WEBFUNNY_CONFIG_URI}/config/recordEmail`, {phone, email, purchaseCode: accountInfo.purchaseCode, source: "center-register"}).catch((e) => {})
     
     // 判断用户名或者账号是否已经存在
     let emailData = await UserModel.checkUserAccount(email)
     if (emailData) {
-      ctx.response.status = 412;
-      ctx.body = statusCode.ERROR_412('邮箱已存在！', 1)
+      ctx.response.status = 200;
+      ctx.body = statusCode.SUCCESS_200('邮箱已存在！', 1)
       return
     }
-
-    // 创建团队
-    // const team = {teamName: company, leaderId: userId, members: userId, webMonitorIds: ""}
-    // TeamModel.createTeam(team);
 
     /* 判断参数是否合法 */
     if (data.nickname && data.emailName && data.password) {
       let ret = await UserModel.createUser(data);
       if (ret && ret.id) {
+        ret.password = password
         ctx.response.status = 200;
-        ctx.body = statusCode.SUCCESS_200('账号注册成功', {userId})
+        ctx.body = statusCode.SUCCESS_200('账号注册成功', ret)
       }
     } else {
       ctx.response.status = 412;
@@ -810,13 +821,13 @@ class UserController {
     const decodePwd = Utils.b64DecodeUnicode(password).split("").reverse().join("")
     const data = {emailName: email, password: Utils.md5(decodePwd), emailCode}
 
-    const registerEmailCodeCheckError = global.monitorInfo.registerEmailCodeCheckError
+    const registerEmailCodeCheckError = global.centerInfo.registerEmailCodeCheckError
     if (registerEmailCodeCheckError[email] >= 3) {
       ctx.response.status = 200;
       ctx.body = statusCode.SUCCESS_200('验证码失败次数达到上限，请重新获取验证码！', 1)
       return
     }
-    const registerEmailCode = global.monitorInfo.registerEmailCode[email]
+    const registerEmailCode = global.centerInfo.registerEmailCode[email]
     const emailCodeStr = emailCode.toLowerCase()
     // 判断验证码是否正确或是否失效
     if (!registerEmailCode || emailCodeStr != registerEmailCode.toLowerCase()) {
@@ -1054,9 +1065,9 @@ class UserController {
     if (existUsers.length > 1) {
       return 0
     }
-    const { userId, userType, emailName, nickname } = existUsers[0]
+    const { userId, userType, emailName, nickname, companyId = "1" } = existUsers[0]
     // 账号存在，则说明账号有效，生成登录token
-    const accessToken = jwt.sign({userId, userType, emailName, nickname}, secret.sign, {expiresIn: 33 * 24 * 60 * 60 * 1000})
+    const accessToken = jwt.sign({userId, userType, emailName, nickname, companyId}, secret.sign, {expiresIn: 33 * 24 * 60 * 60 * 1000})
 
     // 生成好的token存入数据库，如果已存在userId，则更新
     const userTokenInfo = await UserTokenModel.getUserTokenDetail(userId)

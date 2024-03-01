@@ -31,11 +31,10 @@ class TimerCalculateController {
           const { flowCount, companyId } = totalCountArr[i]
           const totalCount = flowCount
           const productRes = await ProductModel.getProductDetailByCompanyId(companyId)
-          const { maxFlowCount, usedFlowCount } = productRes
+          const { maxFlowCount = 0, usedFlowCount = 0 } = productRes === null ? {} : productRes
           const finalUsedFlowCount = totalCount + usedFlowCount * 1
           // 如果流量超出了最大值，则产品失效
           let isValid = finalUsedFlowCount >= maxFlowCount ? 0 : 1
-          console.log(companyId, monthName, totalCount, productRes.usedFlowCount, isValid)
 
           // 查询出当前月份的产品信息
           ProductModel.updateProduct(companyId, monthName, {usedFlowCount: finalUsedFlowCount, isValid})

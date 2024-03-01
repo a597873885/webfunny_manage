@@ -22,7 +22,7 @@
         "write": {
           "ip": "121.4.94.89",
           "port": "3306",
-          "dataBaseName": "webfunny_db_20230914094436466",
+          "dataBaseName": "webfunny_event_3.0",
           "userName": "webfunny",
           "password": "12345678"
         },

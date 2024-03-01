@@ -42,7 +42,7 @@ class CompanyModel {
     })
   }
   static async getCompanyList() {
-    const sql = "select companyId, companyName from Company"
+    const sql = "SELECT c.companyId as companyId, c.companyName as companyName, u.nickname as ownerName from Company as c, User as u where c.ownerId = u.userId"
     return await Sequelize.query(sql, { type: Sequelize.QueryTypes.SELECT })
   }
 

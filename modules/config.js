@@ -30,6 +30,14 @@ class ConfigModel {
     })
   }
 
+  static async getConfigByName(configName) {
+    return await Config.findOne({
+      where: {
+        configName,
+      },
+    })
+  }
+
   static async updateConfig(configName, data) {
     await Config.update({
       ...data

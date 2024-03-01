@@ -1,23 +1,12 @@
 var fs = require('fs');
 var version = require("./version")
 var utils = require("./util/utils")
-var jsHamanUrl = "http://www.jshaman.com:800/submit_js_code"
-var jsHamanParams = {
-    js_code: "",
-    vip_code: "s2023-0809-21c3",
-    config: {
-        "compact": true,
-        "controlFlowFlattening": true,
-        "stringArray" :true,
-        "stringArrayEncoding": true,
-        "disableConsoleOutput": false,
-        "debugProtection": true,
-        // "domainLock": ["www.jshaman.com","www.domain.com"],
-        "reservedNames": []
-    }
-} 
+const pathApp = require('path')
+// 原路径往上跳2层
+const originPath = pathApp.resolve(__dirname, '../../')
+
 function handleControllers(success) {
-    let path = '/Users/jeffery/MonitorProjects/webfunny_manage/controllers';
+    let path = './controllers';
     let files = fs.readdirSync(path);
     let deleteReg = /\/\/delete\/\/[\d\D]*\/\/delete\/\//g
     let exportsReg = /\/\/exports\/\/[\d\D]*\/\/exports\/\//g
@@ -55,7 +44,7 @@ function handleControllers(success) {
             if (result.indexOf("webfunny-version-flag") != -1) {
                 result = result.replace(/webfunny-version-flag/g, webfunnyVersion)
             }
-            fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/controllers.js', result, { 'flag': 'a' }, function(err) {
+            fs.writeFile('./dist/controllers.js', result, { 'flag': 'a' }, function(err) {
                 if (err) {
                     throw err;
                 }
@@ -70,7 +59,7 @@ function handleControllers(success) {
 }
 
 function handleModels(success) {
-    let path = '/Users/jeffery/MonitorProjects/webfunny_manage/modules';
+    let path = './modules';
     let files = fs.readdirSync(path);
     let deleteReg = /\/\/delete\/\/[\d\D]*\/\/delete\/\//g
     let sequelizeReg = /\/\/Sequelize\/\/[\d\D]*\/\/Sequelize\/\//g
@@ -92,7 +81,7 @@ function handleModels(success) {
                 // sequelizeResult = sequelizeResult.replace(/\'\.\.\/schema\/[a-zA-Z]*\'/g, sequelizeName + "Schema")
             }
             result = sequelizeResult + code.replace(deleteReg, "").replace(sequelizeReg, "").replace(exportsReg, "")
-            fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/models.js', result, { 'flag': 'a' }, function(err) {
+            fs.writeFile('./dist/models.js', result, { 'flag': 'a' }, function(err) {
                 if (err) {
                     throw err;
                 }
@@ -109,11 +98,11 @@ function handleModels(success) {
 
 function handleSchema(success) {
     let baseInfo = "const baseInfo = require('./baseInfo'); const moment = require('moment');"
-    fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/schemas.js', baseInfo, { 'flag': 'a' }, function(err) {
+    fs.writeFile('./dist/schemas.js', baseInfo, { 'flag': 'a' }, function(err) {
         if (err) {
             throw err;
         }
-        let path = '/Users/jeffery/MonitorProjects/webfunny_manage/schema';
+        let path = './schema';
         let files = fs.readdirSync(path);
         let deleteReg = /\/\/delete\/\/[\d\D]*\/\/delete\/\//g
         let exportsReg = /\/\/exports\/\/[\d\D]*\/\/exports\/\//g
@@ -129,7 +118,7 @@ function handleSchema(success) {
                     exportNames.push(exportName)
                 }
                 result = code.replace(deleteReg, "").replace(exportsReg, "")
-                fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/schemas.js', result, { 'flag': 'a' }, function(err) {
+                fs.writeFile('./dist/schemas.js', result, { 'flag': 'a' }, function(err) {
                     if (err) {
                         throw err;
                     }
@@ -145,7 +134,7 @@ function handleSchema(success) {
 
 // 执行开始
 // 删除原来的文件
-let path = '/Users/jeffery/MonitorProjects/webfunny_manage/dist';
+let path = './dist';
 let files = fs.readdirSync(path);
 files.forEach(function(fileName) {
     fs.unlink(path + "/" + fileName,() => {
@@ -164,7 +153,7 @@ handleSchema(function(schemas) {
     })
     result += "}"
 
-    fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/schemas.js', result, { 'flag': 'a' }, function(err) {
+    fs.writeFile('./dist/schemas.js', result, { 'flag': 'a' }, function(err) {
         if (err) {
             throw err;
         }
@@ -177,7 +166,7 @@ handleSchema(function(schemas) {
                         const utils = require('../util/utils');
                         const CommonSql = require('../util/commonSql')
                         const geoip = require('geoip-lite');
-                        const log = require("../config/log");
+                        const log = require("../../../config/log");
                         const { UPLOAD_TYPE, FLOW_TYPE, START_YEAR } = require('../config/consts')
                         const AccountConfig = require('../config/AccountConfig')
                         const { accountInfo } = AccountConfig
@@ -185,7 +174,7 @@ handleSchema(function(schemas) {
                         const infoSchemaListByYear = require("../schema/infoSchemaListByYear")
                         const fs = require('fs');
                         const fetch = require('node-fetch');`
-    fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/models.js', importResult, { 'flag': 'a' }, function(err) {
+    fs.writeFile('./dist/models.js', importResult, { 'flag': 'a' }, function(err) {
         if (err) { throw err; }
         // 合并models
         handleModels(function(models) {
@@ -203,7 +192,7 @@ handleSchema(function(schemas) {
             console.log(result)
 
             setTimeout(function() {
-                fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/models.js', result, { 'flag': 'a' }, function(err) {
+                fs.writeFile('./dist/models.js', result, { 'flag': 'a' }, function(err) {
                     if (err) { throw err; }
                     
                     // controller.js通用文件的引入
@@ -212,10 +201,10 @@ handleSchema(function(schemas) {
                                         const colors = require('colors');
                                         const Utils = require('../util/utils');
                                         const utils = require('../util/utils');
-                                        const CusUtils = require('../util_cus')
-                                        const log = require("../config/log");
+                                        const CusUtils = require('../../../util_cus')
+                                        const log = require("../../../config/log");
                                         const statusCode = require('../util/status-code');
-                                        const { UPLOAD_TYPE, FLOW_TYPE, PROJECT_INFO, USER_INFO, WEBFUNNY_CONFIG_URI } = require('../config/consts');
+                                        const { UPLOAD_TYPE, FLOW_TYPE, PROJECT_INFO, USER_INFO, WEBFUNNY_CONFIG_URI, PRODUCT_INFO_URI } = require('../config/consts');
                                         const fetch = require('node-fetch');
                                         const jwt = require('jsonwebtoken')
                                         const secret = require('../config/secret')
@@ -228,7 +217,7 @@ handleSchema(function(schemas) {
                                         const getmac = require('getmac')
                                         const { spawn, exec, execFile } = require('child_process');
                                         const { accountInfo } = AccountConfig
-                                        const { feiShuConfig } = require("../sso")
+                                        const { feiShuConfig } = require("../../../sso")
                                         const Consts = require('../config/consts')
                                         const { PROJECT_API } = Consts
                                         const ProductTypeMap = { monitor: '监控', event: '埋点' }
@@ -239,7 +228,7 @@ handleSchema(function(schemas) {
                     })
                     controllerResult += "} = require('../modules/models.js');"
                     controllerResult = importResult + "\n" + controllerResult
-                    fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/controllers.js', controllerResult, { 'flag': 'a' }, function(err) {
+                    fs.writeFile('./dist/controllers.js', controllerResult, { 'flag': 'a' }, function(err) {
                         if (err) { throw err; }
                         handleControllers(function(controllers) {
                             let result = "module.exports = {"
@@ -255,43 +244,64 @@ handleSchema(function(schemas) {
                             console.log("controllers 导出列表：")
                             console.log(result)
                             setTimeout(function() {
-                                fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/controllers.js', result, { 'flag': 'a' }, function(err) {
+                                fs.writeFile('./dist/controllers.js', result, { 'flag': 'a' }, function(err) {
                                     if (err) { throw err; }
 
-                                    // 压缩models
+                                    // 将controllers.js复制到webfunny_monitor/servers/monitor/controllers目录下
                                     setTimeout(() => {
-                                        fs.readFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/models.js', function(err, data){
-                                            if (err) throw err
-                                            let code = data.toString()
-                                            // 对代码进行加密
-                                            jsHamanParams.js_code = code
-                                            utils.postJson(jsHamanUrl, jsHamanParams).then((res) => {
-                                                fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/models.min.js', res.content, function(err) {
-                                                    if (err) { throw err; }
-                                                    console.log("models压缩完成，压缩后长度为：", res.content.length)
-                                                });
-                                            }).catch((e) => {
-                                                console.log(e)
-                                            })
-                                        })
+                                        fs.copyFile('./dist/controllers.js', originPath + '/专业版/0_pre_publish/webfunny_monitor/servers/center/controllers/controllers.js', (err) => {
+                                            if (err) { throw err; }
+                                            console.log("【controllers.js已复制！】")
+                                        });
+                                        fs.copyFile('./dist/models.js', originPath + '/专业版/0_pre_publish/webfunny_monitor/servers/center/modules/models.js', (err) => {
+                                            if (err) { throw err; }
+                                            console.log("【models.js已复制！】")
+                                        });
+
+                                        fs.copyFile('./dist/controllers.js', originPath + '/企业版/0_pre_publish/webfunny_monitor_cluster/servers/center/controllers/controllers.js', (err) => {
+                                            if (err) { throw err; }
+                                            console.log("【controllers.js企业版已复制！】")
+                                        });
+                                        fs.copyFile('./dist/models.js', originPath + '/企业版/0_pre_publish/webfunny_monitor_cluster/servers/center/modules/models.js', (err) => {
+                                            if (err) { throw err; }
+                                            console.log("【models.js企业版已复制！】")
+                                        });
                                     }, 3000)
-                                    // 写入完成后, 3秒钟后开始加密
-                                    setTimeout(() => {
-                                        fs.readFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/controllers.js', function(err, data){
-                                            if (err) throw err
-                                            let code = data.toString()
-                                            // 对代码进行加密
-                                            jsHamanParams.js_code = code
-                                            utils.postJson(jsHamanUrl, jsHamanParams).then((res) => {
-                                                fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/controllers.min.js', res.content, function(err) {
-                                                    if (err) { throw err; }
-                                                    console.log("controller压缩完成，压缩后长度为：", res.content.length)
-                                                });
-                                            }).catch((e) => {
-                                                console.log(e)
-                                            })
-                                        })
-                                    }, 6000)
+
+                                    // // 压缩models
+                                    // setTimeout(() => {
+                                    //     fs.readFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/models.js', function(err, data){
+                                    //         if (err) throw err
+                                    //         let code = data.toString()
+                                    //         // 对代码进行加密
+                                    //         jsHamanParams.js_code = code
+                                    //         utils.postJson(jsHamanUrl, jsHamanParams).then((res) => {
+                                    //             fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/models.min.js', res.content, function(err) {
+                                    //                 if (err) { throw err; }
+                                    //                 console.log("models压缩完成，压缩后长度为：", res.content.length)
+                                    //             });
+                                    //         }).catch((e) => {
+                                    //             console.log(e)
+                                    //         })
+                                    //     })
+                                    // }, 3000)
+                                    // // 写入完成后, 3秒钟后开始加密
+                                    // setTimeout(() => {
+                                    //     fs.readFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/controllers.js', function(err, data){
+                                    //         if (err) throw err
+                                    //         let code = data.toString()
+                                    //         // 对代码进行加密
+                                    //         jsHamanParams.js_code = code
+                                    //         utils.postJson(jsHamanUrl, jsHamanParams).then((res) => {
+                                    //             fs.writeFile('/Users/jeffery/MonitorProjects/webfunny_manage/dist/controllers.min.js', res.content, function(err) {
+                                    //                 if (err) { throw err; }
+                                    //                 console.log("controller压缩完成，压缩后长度为：", res.content.length)
+                                    //             });
+                                    //         }).catch((e) => {
+                                    //             console.log(e)
+                                    //         })
+                                    //     })
+                                    // }, 6000)
                                 });
                             }, 2000)
                         })

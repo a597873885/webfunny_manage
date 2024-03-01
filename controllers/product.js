@@ -4,7 +4,7 @@ const statusCode = require('../util/status-code')
 const Utils = require('../util/utils');
 // const TeamController = require('./team')
 const Consts = require('../config/consts')
-const { PROJECT_API, PRODUCT_INFO_URI } = Consts
+const { PROJECT_API, WEBFUNNY_CONFIG_URI } = Consts
 //delete//
 class ProductController {
     /**
@@ -49,9 +49,8 @@ class ProductController {
      */
     static async batchCreateOrUpdateProduct(ctx) {
         // const productInfoHost = '139.224.102.107:8030'
-        const _url = `${PRODUCT_INFO_URI}${PROJECT_API.SAAS_PRODUCT_INFO}`
-        const productRes = await Utils.requestForTwoProtocol("post", _url)
-        // console.log('productRes', productRes)
+        const _url = `${WEBFUNNY_CONFIG_URI}/config/getProductList`
+        const productRes = await Utils.postJson(_url)
         const { data = {} } = productRes
         let params = [] //需要新增的数据列表
         let allOrderIds = [] //当成新增或者失效的全部订单列表

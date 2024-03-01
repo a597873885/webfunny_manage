@@ -244,7 +244,7 @@ class ApplicationConfigController {
             app_secret: feiShuConfig.appSecret,
         }
         // 获取缓存里的token
-        const tokenInCache = global.monitorInfo.ssoForFeiShu.appToken
+        const tokenInCache = global.centerInfo.ssoForFeiShu.appToken
         let cacheTokenValid = false
         if (tokenInCache && tokenInCache.value) {
             if (new Date().getTime() < tokenInCache.endTime) {
@@ -263,13 +263,13 @@ class ApplicationConfigController {
             if (tokenRes) {
                 const { app_access_token, expire } = tokenRes
                 finalToken = app_access_token
-                global.monitorInfo.ssoForFeiShu.appToken = {
+                global.centerInfo.ssoForFeiShu.appToken = {
                     value: finalToken,
                     endTime: new Date().getTime() + expire * 1000
                 }
             }
         } else {
-            finalToken = global.monitorInfo.ssoForFeiShu.appToken.value
+            finalToken = global.centerInfo.ssoForFeiShu.appToken.value
         }
         if (!finalToken) {
             ctx.response.status = 412;
@@ -282,7 +282,7 @@ class ApplicationConfigController {
             "Content-Type": "application/json"
         }
         // 获取缓存里的ticket
-        const ticketInCache = global.monitorInfo.ssoForFeiShu.ticket
+        const ticketInCache = global.centerInfo.ssoForFeiShu.ticket
         let cacheTicketValid = false
         if (ticketInCache && ticketInCache.value) {
             if (new Date().getTime() < ticketInCache.endTime) {
@@ -301,13 +301,13 @@ class ApplicationConfigController {
             if (ticketRes) {
                 const { ticket, expire_in } = ticketRes.data
                 finalTicket = ticket
-                global.monitorInfo.ssoForFeiShu.ticket = {
+                global.centerInfo.ssoForFeiShu.ticket = {
                     value: finalTicket,
                     endTime: new Date().getTime() + expire_in * 1000
                 }
             }
         } else {
-            finalTicket = global.monitorInfo.ssoForFeiShu.ticket.value
+            finalTicket = global.centerInfo.ssoForFeiShu.ticket.value
         }
 
         if (!finalTicket) {
@@ -340,7 +340,7 @@ class ApplicationConfigController {
 
         let finalToken = ""
         const customHead = {
-            "Authorization": `Bearer ${global.monitorInfo.ssoForFeiShu.appToken.value}`,
+            "Authorization": `Bearer ${global.centerInfo.ssoForFeiShu.appToken.value}`,
             "Content-Type": "application/json"
         }
         log.printInfo(getUserTokenConfig.url + " 接口参数（header）：", JSON.stringify(customHead))
